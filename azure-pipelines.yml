@@ -10,7 +10,6 @@ steps:
   inputs:
     mavenPomFile: 'pom.xml'
     goals: 'clean package'
-    options: 
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
     javaHomeOption: 'JDKVersion'
@@ -32,3 +31,23 @@ steps:
     PathtoPublish: '$(System.DefaultWorkingDirectory)/webapp/target/webapp.war'
     ArtifactName: 'drop'
     publishLocation: 'Container'
+
+# ✅ NEW STEP (THIS IS YOUR DEPLOYMENT)
+- script: |
+    echo "Stopping Tomcat..."
+    sh /Users/deepakkumar/Downloads/apache-tomcat-9.0.117/bin/shutdown.sh
+    sleep 5
+
+    echo "Cleaning old deployment..."
+    rm -rf /Users/deepakkumar/Downloads/apache-tomcat-9.0.117/webapps/webapp*
+    rm -rf /Users/deepakkumar/Downloads/apache-tomcat-9.0.117/work/*
+
+    echo "Copying new WAR from build..."
+    cp $(System.DefaultWorkingDirectory)/webapp/target/webapp.war \
+    /Users/deepakkumar/Downloads/apache-tomcat-9.0.117/webapps/
+
+    echo "Starting Tomcat..."
+    sh /Users/deepakkumar/Downloads/apache-tomcat-9.0.117/bin/startup.sh
+
+    echo "Deployment completed!"
+  displayName: 'Deploy to Local Tomcat'
