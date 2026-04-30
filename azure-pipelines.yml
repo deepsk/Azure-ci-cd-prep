@@ -5,6 +5,9 @@ pool:
   name: Default
 
 steps:
+# ---------------------------
+# 1. Build
+# ---------------------------
 - task: Maven@3
   displayName: 'Maven Build and Test'
   inputs:
@@ -18,6 +21,9 @@ steps:
   env:
     MAVEN_OPTS: '-Xmx3072m'
 
+# ---------------------------
+# 2. Code Coverage
+# ---------------------------
 - task: PublishCodeCoverageResults@1
   displayName: 'Publish Code Coverage'
   inputs:
@@ -25,6 +31,9 @@ steps:
     summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/site/jacoco/jacoco.xml'
     reportDirectory: '$(System.DefaultWorkingDirectory)/**/site/jacoco'
 
+# ---------------------------
+# 3. Publish Artifact
+# ---------------------------
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact: drop'
   inputs:
@@ -32,22 +41,27 @@ steps:
     ArtifactName: 'drop'
     publishLocation: 'Container'
 
-# ✅ NEW STEP (THIS IS YOUR DEPLOYMENT)
+# ---------------------------
+# 4. Deploy (SAFE VERSION)
+# ---------------------------
 - script: |
-    echo "Stopping Tomcat..."
-    sh /Users/deepakkumar/Downloads/apache-tomcat-9.0.117/bin/shutdown.sh
-    sleep 5
+    echo "Deploying WAR to Tomcat..."
 
-    echo "Cleaning old deployment..."
-    rm -rf /Users/deepakkumar/Downloads/apache-tomcat-9.0.117/webapps/webapp*
-    rm -rf /Users/deepakkumar/Downloads/apache-tomcat-9.0.117/work/*
+    TOMCAT_WEBAPPS="/Users/deepakkumar/Downloads/apache-tomcat-9.0.117/webapps"
+    WAR_SOURCE="$(System.DefaultWorkingDirectory)/webapp/target/webapp.war"
 
-    echo "Copying new WAR from build..."
-    cp $(System.DefaultWorkingDirectory)/webapp/target/webapp.war \
-    /Users/deepakkumar/Downloads/apache-tomcat-9.0.117/webapps/
+    echo "Step 1: Remove old deployment..."
+    rm -rf $TOMCAT_WEBAPPS/webapp
+    rm -f $TOMCAT_WEBAPPS/webapp.war
 
-    echo "Starting Tomcat..."
-    sh /Users/deepakkumar/Downloads/apache-tomcat-9.0.117/bin/startup.sh
+    echo "Step 2: Copy new WAR..."
+    cp $WAR_SOURCE $TOMCAT_WEBAPPS/
 
-    echo "Deployment completed!"
-  displayName: 'Deploy to Local Tomcat'
+    echo "Step 3: Waiting for Tomcat auto-deploy..."
+    sleep 10
+
+    echo "Step 4: Verifying deployment..."
+    curl -f http://localhost:8080/webapp || exit 1
+
+    echo "Deployment successful!"
+  displayName: 'Deploy to Local Tomcat (Auto Deploy)'
