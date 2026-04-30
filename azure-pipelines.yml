@@ -1,0 +1,34 @@
+trigger:
+- master
+
+pool:
+  name: Default
+
+steps:
+- task: Maven@3
+  displayName: 'Maven Build and Test'
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'clean package'
+    options: 
+    publishJUnitResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: 'default'
+    jdkArchitectureOption: 'x64'
+  env:
+    MAVEN_OPTS: '-Xmx3072m'
+
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish Code Coverage'
+  inputs:
+    codeCoverageTool: 'JaCoCo'
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/site/jacoco/jacoco.xml'
+    reportDirectory: '$(System.DefaultWorkingDirectory)/**/site/jacoco'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
+  inputs:
+    PathtoPublish: '$(System.DefaultWorkingDirectory)/webapp/target/webapp.war'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
