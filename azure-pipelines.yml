@@ -40,28 +40,3 @@ steps:
     PathtoPublish: '$(System.DefaultWorkingDirectory)/webapp/target/webapp.war'
     ArtifactName: 'drop'
     publishLocation: 'Container'
-
-# ---------------------------
-# 4. Deploy (SAFE VERSION)
-# ---------------------------
-- script: |
-    echo "Deploying WAR to Tomcat..."
-
-    TOMCAT_WEBAPPS="/Users/deepakkumar/Downloads/apache-tomcat-9.0.117/webapps"
-    WAR_SOURCE="$(System.DefaultWorkingDirectory)/webapp/target/webapp.war"
-
-    echo "Step 1: Remove old deployment..."
-    rm -rf $TOMCAT_WEBAPPS/webapp
-    rm -f $TOMCAT_WEBAPPS/webapp.war
-
-    echo "Step 2: Copy new WAR..."
-    cp $WAR_SOURCE $TOMCAT_WEBAPPS/
-
-    echo "Step 3: Waiting for Tomcat auto-deploy..."
-    sleep 10
-
-    echo "Step 4: Verifying deployment..."
-    curl -f http://localhost:8080/webapp || exit 1
-
-    echo "Deployment successful!"
-  displayName: 'Deploy to Local Tomcat (Auto Deploy)'
